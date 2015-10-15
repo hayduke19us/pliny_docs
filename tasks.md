@@ -2,7 +2,7 @@
 
 #### Rakefile 
 
-*$ROOT/Rakefile.rb*
+*$ROOT/Rakefile*
 
 The Rakefile by default has two jobs.
 
@@ -20,14 +20,14 @@ sure you keep your *Rakefile* pristine and `require pliny/tasks` must always
 precede your code. When the tasks are required we get necessary classes and
 methods.
 
-* database_url
+* database_urls
 	
 * Pliny::DbSupport
 
 * Sequel 
 
 * Pliny::Utils
-	* self#parse.env
+	* self#parse_env
 
 **Connecting to the Database**
 

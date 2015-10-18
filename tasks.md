@@ -35,12 +35,12 @@ methods.
 
 				or
 
-				database_urls.cycle { |url| Sequel.connect(url) }
+				database_urls.cycle(1) { |url| Sequel.connect(url) }
 
-A way to do this while keeping things production ready can be found in Pliny's
-*lib/pliny/db.rake#137*. The method `#databse_urls` here first looks for your
-ENV['DATABASE_URL'] and if not found parses your *.env* and *.env.test* files.
-It returns an enumerable of [database_urls]. They can be iterated thru as
+A good example of how these methods are used can be found in
+*lib/pliny/tasks/db.rake#131*. The method `#databse_urls` first calls
+`ENV['DATABASE_URL']` and if not found parses your *.env* and *.env.test* files.
+It returns a mapped enumerable of [database_urls]. They can be iterated thru as
 follows:
 
 				database_urls.each do |database_url| 
@@ -97,7 +97,10 @@ To Choose the last database
 
 **Accessing Models**
 
-				database_urls.cycle { |url| Sequel.connect url }
+The important thing is to make sure your database is connected before sending a
+message to a model. If not it will throw a verbose error.
+
+				database_urls.cycle(1) { |url| Sequel.connect url }
 
 				or
 
@@ -107,7 +110,6 @@ To Choose the last database
 
 				Sequel.connect(database_urls.last)
 
-				or
 
 				require './lib/models/user'
 
@@ -148,35 +150,40 @@ grabbing all of them from the get go.
 				end
 
 Then you can use the `env['SOMETHING']` any time you want. The conditional
-looking for ENV['RACK_ENV'] is just checking if it is launched on heroku where
+looking for ENV['RACK_ENV'] is just checking if it is launched on Heroku where
 you have access to `heroku config`, the ENV.  Or you can get an individual env
 like below.
 
 
 				def get_env env
 				
-					if ENV[env]
+				  ENV[env] ? ENV[env] : parse_env.compact
 
-					  ENV[VARIABLE] 
-					  
-					else
+				end 
 
-					  %(.env .env.test).map {
+				def parse_env 
+
+				  %(.env .env.test).map do |file|
+                     
+					path = './' + file
+
+					if File.exist? path
+
+					  Pliny::Utils.parse_env(path)["env"]
+
+					else 
 					
-						env_path = "./{env_path}" 
-			  
-						If File.exists?(env_path)
-
-						  Pliny::Utils.parse_env(env_path)["ENV_VARIABLE"] 
-
-						else 
-						
-						  nil 
-						
-						 end
-
-					   }  
-					  
-					end
+					  nil 
+					
+					end 
 					
 				  end
+					
+				end  
+				  
+
+This does the same thing as `database_urls`. Here it is refactored into two
+methods. The first method looking for the environment returning that variable if
+found. The second method is a composite for the first and parses the environment
+files. 
+
